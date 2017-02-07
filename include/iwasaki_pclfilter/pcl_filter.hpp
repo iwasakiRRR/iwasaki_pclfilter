@@ -30,11 +30,13 @@ class RyoFilter{
 	public:
 		RyoFilter();
 		ros::Publisher point_pub;
+		ros::Publisher pub;
 		ros::Subscriber point_sub;
 		ros::NodeHandle nh;
 		clock_t start,end;
 		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud;
-		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2;
+		//pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered;
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane;
 		pcl::ModelCoefficients::Ptr coefficients;
 		pcl::PointIndices::Ptr inliers;
 		pcl::VoxelGrid<pcl::PointXYZ> sor1;
@@ -44,10 +46,12 @@ class RyoFilter{
 		pcl::MovingLeastSquares<pcl::PointXYZ, pcl::PointNormal> mls;
 		pcl::SACSegmentation<pcl::PointXYZ> seg;
 		pcl::ExtractIndices<pcl::PointXYZ> extract;
-		std::vector<pcl::PointIndices> cluster_indices;  
+		std::vector<pcl::PointIndices> cluster_indices;
+		std::vector<pcl::PointIndices> hoge;
   		pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;  
 		pcl::RadiusOutlierRemoval<pcl::PointXYZ> outrem;
 		sensor_msgs::PointCloud2 mls_cloud;
+		sensor_msgs::PointCloud2 cluster;
 		std::vector<int> indicies;
 		
 		void Init(const sensor_msgs::PointCloud2ConstPtr& _input);
@@ -65,9 +69,11 @@ class RyoFilter{
 		void cloud_callback (const sensor_msgs::PointCloud2ConstPtr& input){
 		
 			cloud.reset(new pcl::PointCloud<pcl::PointXYZ>);
-			cloud2.reset(new pcl::PointCloud<pcl::PointXYZ>);
+			//cloud_filtered.reset(new pcl::PointCloud<pcl::PointXYZ>);
+			cloud_plane.reset(new pcl::PointCloud<pcl::PointXYZ>);
 			coefficients.reset(new pcl::ModelCoefficients);
 			inliers.reset(new pcl::PointIndices);
+			tree.reset(new pcl::search::KdTree<pcl::PointXYZ>);
 																															
 			start=clock()/1000;
 			Init(input);//ポインタを送る
@@ -83,6 +89,7 @@ class RyoFilter{
 			}
 			Ror();
 			Exception();
+			Ece();
 			pcl::toROSMsg (*cloud, mls_cloud);
 			point_pub.publish (mls_cloud);
 			end=clock()/1000;
@@ -92,9 +99,12 @@ class RyoFilter{
 			else{
 				std::cerr<<"pointnum=0 "<<"  "<<"time:"<<end-start<<" ms"<<std::endl;
 			}
+			//Ece();
 			
-			
-		}
-		
-
+			cluster_indices.clear();
+			cluster_indices.swap(hoge);
+			//std::cout<<"vectorクリア後"<<cluster_indices.size()<< "　"<<cluster_indices.capacity()<<std::endl;	
+		}		
 };
+
+

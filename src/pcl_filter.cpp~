@@ -26,7 +26,6 @@ void RyoFilter::Sor(){
 }
 void RyoFilter::Smooth(){
 	
-	pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
 	mls.setComputeNormals (true);//法線の計算を行うかどうか
 		// 各パラメーターの設定
 	mls.setInputCloud (cloud);
@@ -51,7 +50,9 @@ void RyoFilter::PlaneExtract(){
 void RyoFilter::PlaneRem(){
 
 	extract.setInputCloud (cloud);//cloud.makeShared()はクラウドのコピーへのポインタを返す
-	extract.setIndices (inliers);  
+	extract.setIndices (inliers); 
+	extract.setNegative (false);
+	extract.filter (*cloud_plane);
 	extract.setNegative (true);  
 	extract.filter (*cloud);
 }
@@ -60,11 +61,14 @@ void RyoFilter::Ece(){
 
 	tree->setInputCloud (cloud);  
 	ec.setClusterTolerance (0.02); // 2cm 
-	ec.setMinClusterSize (750);//もともと１００  
+	ec.setMinClusterSize (100);//もともと100
 	ec.setMaxClusterSize (25000);  
 	ec.setSearchMethod (tree);  
 	ec.setInputCloud(cloud);  
 	ec.extract (cluster_indices);
+	std::cout<<"vectorクリア前"<<cluster_indices.size()<< " "
+						<<cluster_indices.capacity()<< " "
+						<<cluster_indices[1]<<std::endl;
 }
 
 void RyoFilter::Ror(){
